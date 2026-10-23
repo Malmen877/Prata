@@ -53,4 +53,5 @@ Flags override the environment variables below. `PRATA_*` is the primary name; t
 | `PRATA_VAD` | unset (CLI default `on`) | passed as `--vad` (`on`/`off`) |
 | `PRATA_BATCH_SIZE` | unset (CLI default auto) | passed as `--batch-size` |
 | `KLANG_API_KEY` | unset | enables the [Klang import](klang-import.md) (`PRATA_KLANG_API_KEY` also works) |
+| `HF_HUB_OFFLINE` | unset | `1` (or `true`/`yes`/`on`): models are read from the Hugging Face cache only, never downloaded. A model that is not in the cache fails the job with a message instead of being fetched |
 | `PRATA_KLANG_BASE_URL` | `https://app.klang.ai/api/v1` | Klang API base (for tests against a mock; `http` only for `127.0.0.1`) |

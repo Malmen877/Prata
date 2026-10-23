@@ -158,6 +158,25 @@ fn token_id(tok: &Tokenizer, s: &str) -> Result<u32> {
     tok.token_to_id(s).with_context(|| format!("no token id for {s}"))
 }
 
+/// `HF_HUB_OFFLINE` set to 1/true/yes/on (any case), as in huggingface_hub: models come from
+/// the local cache only and a missing file is an error, never a download. hf-hub does not
+/// read the variable itself.
+pub(crate) fn hf_offline() -> bool {
+    std::env::var("HF_HUB_OFFLINE").map(|v| is_truthy(&v)).unwrap_or(false)
+}
+
+fn is_truthy(v: &str) -> bool {
+    matches!(v.trim().to_ascii_lowercase().as_str(), "1" | "true" | "yes" | "on")
+}
+
+/// The error for a model file that is missing from the cache while HF_HUB_OFFLINE is set.
+pub(crate) fn offline_missing(repo_id: &str, rev: &str, file: &str) -> E {
+    anyhow::anyhow!(
+        "{repo_id}/{file} (revision {rev}) is not in the Hugging Face cache and HF_HUB_OFFLINE is set; \
+         download the model first (run once without HF_HUB_OFFLINE) or copy it into the cache"
+    )
+}
+
 /// Download (or reuse from ~/.cache/huggingface) one file of a model repo.
 fn hub_get(client: &HFClientSync, repo_id: &str, rev: &str, file: &str) -> Result<PathBuf> {
     let (owner, name) = hf_hub::split_id(repo_id);
@@ -165,6 +184,7 @@ fn hub_get(client: &HFClientSync, repo_id: &str, rev: &str, file: &str) -> Resul
     let dl = repo.download_file().filename(file).revision(rev.to_string());
     match dl.clone().local_files_only(true).send() {
         Ok(p) => Ok(p),
+        Err(HFError::LocalEntryNotFound { .. }) if hf_offline() => Err(offline_missing(repo_id, rev, file)),
         Err(HFError::LocalEntryNotFound { .. }) => {
             eprintln!("[info] downloading {repo_id}/{file} ...");
             Ok(dl.send()?)
@@ -864,6 +884,16 @@ fn main() -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn hf_offline_values() {
+        for v in ["1", "true", "TRUE", "yes", "On", " 1 "] {
+            assert!(is_truthy(v), "{v}");
+        }
+        for v in ["", "0", "false", "no", "off", "offline"] {
+            assert!(!is_truthy(v), "{v}");
+        }
+    }
 
     #[test]
     fn srt_time_format() {

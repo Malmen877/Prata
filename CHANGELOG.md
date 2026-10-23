@@ -4,6 +4,13 @@ All notable changes to Prata (the `prata` CLI, `prata-web` and the `prata-app` n
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+- `HF_HUB_OFFLINE=1` is respected: `prata` reads models from the Hugging Face cache only and fails with a clear message
+  when a model file is missing, instead of downloading it. Before, a missing model was fetched from Hugging Face even
+  with the variable set.
+
 ## [0.7.0] - 2026-10-04
 
 ### Added

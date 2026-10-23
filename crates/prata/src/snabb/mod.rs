@@ -102,6 +102,7 @@ mod imp {
         let dl = repo.download_file().filename(file).revision(rev.to_string());
         match dl.clone().local_files_only(true).send() {
             Ok(p) => Ok(p),
+            Err(HFError::LocalEntryNotFound { .. }) if crate::hf_offline() => Err(crate::offline_missing(REPO, rev, file)),
             Err(HFError::LocalEntryNotFound { .. }) => {
                 eprintln!("[info] downloading {REPO}/{file} (Klang Pianissimo, CC BY 4.0) ...");
                 let printer = Printer { file: file.to_string(), last: AtomicU64::new(0) };
